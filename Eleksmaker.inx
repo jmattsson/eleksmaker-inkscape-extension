@@ -8,19 +8,19 @@
 	<param name="laser-command" type="string" _gui-text="Laser On/Pen Down:">M03 G1Z0</param>
 	<param name="laser-off-command" type="string" _gui-text="Laser Off/Pen Up:">M05</param>
 
-	<param name="posx" type="int" min="0" max="10000" _gui-text="Start Position X :">0</param>
-	<param name="posy" type="int" min="0" max="10000" _gui-text="Start Position Y :">0</param>
+	<param name="posx" type="int" min="0" max="10000" _gui-text="Start Position X:">0</param>
+	<param name="posy" type="int" min="0" max="10000" _gui-text="Start Position Y:">0</param>
 	<param name="iscenter" type="boolean" _gui-text="Start Position Move To Center">false</param>
 
-	<param name="travel-speed" type="int" min="0" max="10000" _gui-text="Jogging Speed (mm/min or in/min):">3500</param>
-	<param name="laser-speed" type="int" min="0" max="4000" _gui-text="Engraving / Draw Speed (mm/min or in/min):">2500</param>
-	<param name="laser-power" type="int" min="0" max="20000" _gui-text="Laser Power / Pen Distance S# (0-1000):">30</param>
-	<param name="power-delay" type="float" min="0" max="1000" _gui-text="Delay (s):">0.2</param>	
-	<param name="passes" type="int" min="1" max="100" _gui-text="Repeat Speed (1-100):">1</param>
-	<param name="pass-depth" type="float" min="0" max="5" _gui-text="Repeat Distance(1-5) (mm or in):">1</param>
+	<param name="travel-speed" type="int" min="0" max="10000" _gui-text="Jogging Speed (mm/min or in/min):">4500</param>
+	<param name="laser-speed" type="int" min="0" max="4000" _gui-text="Engraving / Cutting Speed (mm/min or in/min):">800</param>
+	<param name="laser-power" type="int" min="0" max="1000" _gui-text="Laser Power / Pen Distance S# (0-1000):">1000</param>
+	<param name="power-delay" type="float" min="0" max="1000" _gui-text="Delay After Laser-On (s):">0.2</param>
+	<param name="passes" type="int" min="1" max="100" _gui-text="Number of Passes (1-100):">1</param>
+	<param name="pass-depth" type="float" min="0" max="5" _gui-text="Pass Z-change (0-5) (mm or in):">0</param>
 	<param name="directory" type="string" _gui-text="Save Path:">D:\output</param>
 	<param name="filename" type="string" _gui-text="File Name:">output.nc</param>
-	<param name="add-numeric-suffix-to-filename" type="boolean" _gui-text="Add Num To File Name">true</param>
+	<param name="add-numeric-suffix-to-filename" type="boolean" _gui-text="Add Num To File Name">false</param>
 
   <param name="unit" type="enum" _gui-text="Unit (mm or in):">
     <item value="G21 (All units in mm)">mm</item>
