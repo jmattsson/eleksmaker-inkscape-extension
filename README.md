@@ -1,11 +1,11 @@
 # eleksmaker-inkscape-extension
 
 ## Eleksmaker for Inkscape 1.0+ 
-I got tired of keeping a legacy version of Inkscape (0.9x or lower) to create gcode for my plotter so I updated the extension. It now works with Inkscape 1+ and still be functional for older versions. To install it, download the files and copy them into your extension folder.
+I got tired of keeping a legacy version of Inkscape (0.9x or lower) to create gcode for my plotter so I updated the extension. It now works with Inkscape 1+ and still be functional for older versions. To install it, download the files and copy them into your extension folder (Edit>Preferences>System>Inscape Extensions).
 
 There are a few things worth mentioning
 - It uses a lot of deprecated Inkscape API function calls for drawing the arrows showing the tool path. When these functions are removed it will break the code. For now I have hidden the deprecation warnings so they don't appear every time "Gcode output..." is run.
-- The arrows that show curved toolpaths are broken in the visualisation. In Inkscape 1.0+ it seems to try and close the arrow path back to the origin or something. I haven't bothered fixing it because the gcode output is unaffected (only the onscreen visualisation is).
+- The arrows that show curved toolpaths are broken in the visualisation for Inkscake 1.0 but not 1.1. I haven't bothered fixing it because the gcode output is unaffected (only the onscreen visualisation is).
 - I recommend using the hatch fill function from [AxisDraw](https://wiki.evilmadscientist.com/Axidraw_Software_Installation) because it lets you chose a single or multiple closed paths to fill.
 
 ## Original Readme
