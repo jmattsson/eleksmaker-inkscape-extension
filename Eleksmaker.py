@@ -1,7 +1,8 @@
-#!/usr/bin/env python 
+#!/usr/bin/env python
 """
 Modified by Jay Johnson 2015, J Tech Photonics, Inc., jtechphotonics.com 
 modified by Adam Polak 2014, polakiumengineering.org
+Modified by Jonathan Jamieson 2021 to support Inkscape 1.0+
 
 based on Copyright (C) 2009 Nick Drobchenko, nick@cnc-club.ru
 based on gcode.py (C) 2007 hugomatic... 
@@ -42,28 +43,33 @@ import random
 import gettext
 _ = gettext.gettext
 
- 
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning) 
+
+
 ### Check if inkex has errormsg (0.46 version doesnot have one.) Could be removed later.
 if "errormsg" not in dir(inkex):
     inkex.errormsg = lambda msg: sys.stderr.write((unicode(msg) + "\n").encode("UTF-8"))
 
-
-def bezierslopeatt(((bx0,by0),(bx1,by1),(bx2,by2),(bx3,by3)),t):
-    ax,ay,bx,by,cx,cy,x0,y0=bezmisc.bezierparameterize(((bx0,by0),(bx1,by1),(bx2,by2),(bx3,by3)))
-    dx=3*ax*(t**2)+2*bx*t+cx
-    dy=3*ay*(t**2)+2*by*t+cy
-    if dx==dy==0 : 
-        dx = 6*ax*t+2*bx
-        dy = 6*ay*t+2*by
-        if dx==dy==0 : 
-            dx = 6*ax
-            dy = 6*ay
-            if dx==dy==0 : 
-                print_("Slope error x = %s*t^3+%s*t^2+%s*t+%s, y = %s*t^3+%s*t^2+%s*t+%s,  t = %s, dx==dy==0" % (ax,bx,cx,dx,ay,by,cy,dy,t))
-                print_(((bx0,by0),(bx1,by1),(bx2,by2),(bx3,by3)))
+def bezierslopeatt(input_coords, t):
+    ((bx0, by0), (bx1, by1), (bx2, by2), (bx3, by3)) = input_coords
+    ax, ay, bx, by, cx, cy, x0, y0 = bezmisc.bezierparameterize(((bx0, by0), (bx1, by1), (bx2, by2), (bx3, by3)))
+    dx = 3 * ax * (t ** 2) + 2 * bx * t + cx
+    dy = 3 * ay * (t ** 2) + 2 * by * t + cy
+    if dx == dy == 0:
+        dx = 6 * ax * t + 2 * bx
+        dy = 6 * ay * t + 2 * by
+        if dx == dy == 0:
+            dx = 6 * ax
+            dy = 6 * ay
+            if dx == dy == 0:
+                print_("Slope error x = %s*t^3+%s*t^2+%s*t+%s, y = %s*t^3+%s*t^2+%s*t+%s,  t = %s, dx==dy==0" % (
+                    ax, bx, cx, dx, ay, by, cy, dy, t))
+                print_(((bx0, by0), (bx1, by1), (bx2, by2), (bx3, by3)))
                 dx, dy = 1, 1
-                
-    return dx,dy
+
+    return dx, dy
+	
 bezmisc.bezierslopeatt = bezierslopeatt
 
 
@@ -608,7 +614,7 @@ def csplength(csp):
     total = 0
     lengths = []
     for sp in csp:
-        for i in xrange(1,len(sp)):
+        for i in range(1,len(sp)):
             l = cspseglength(sp[i-1],sp[i])
             lengths.append(l)
             total += l            
@@ -618,12 +624,12 @@ def csplength(csp):
 def csp_segments(csp):
     l, seg = 0, [0]
     for sp in csp:
-        for i in xrange(1,len(sp)):
+        for i in range(1,len(sp)):
             l += cspseglength(sp[i-1],sp[i])
             seg += [ l ] 
 
     if l>0 :
-        seg = [seg[i]/l for i in xrange(len(seg))]
+        seg = [seg[i]/l for i in range(len(seg))]
     return seg,l
 
 
@@ -634,13 +640,13 @@ def rebuild_csp (csp, segs, s=None):
     if len(s)>len(segs) : return None
     segs = segs[:]
     segs.sort()
-    for i in xrange(len(s)):
+    for i in range(len(s)):
         d = None
-        for j in xrange(len(segs)):
+        for j in range(len(segs)):
             d = min( [abs(s[i]-segs[j]),j], d) if d!=None else [abs(s[i]-segs[j]),j]
         del segs[d[1]]
-    for i in xrange(len(segs)):
-        for j in xrange(0,len(s)):
+    for i in range(len(segs)):
+        for j in range(0,len(s)):
             if segs[i]<s[j] : break
         if s[j]-s[j-1] != 0 :
             t = (segs[i] - s[j-1])/(s[j]-s[j-1])
@@ -785,8 +791,7 @@ def point_to_arc_distance(p, arc):
             else :
                 return (d2, [P2.x,P2.y])
 
-
-def csp_to_arc_distance(sp1,sp2, arc1, arc2, tolerance = 0.01 ): # arc = [start,end,center,alpha]
+def csp_to_arc_distance(sp1,sp2, arc1, arc2, tolerance = 0.001 ): # arc = [start,end,center,alpha]
     n, i = 10, 0
     d, d1, dl = (0,(0,0)), (0,(0,0)), 0
     while i<1 or (abs(d1[0]-dl[0])>tolerance and i<4):
@@ -796,7 +801,10 @@ def csp_to_arc_distance(sp1,sp2, arc1, arc2, tolerance = 0.01 ): # arc = [start,
             t = float(j)/n
             p = csp_at_t(sp1,sp2,t) 
             d = min(point_to_arc_distance(p,arc1), point_to_arc_distance(p,arc2))
-            d1 = max(d1,d)
+            if d1[0] > d[0]:
+                d1 =d1
+            else:
+                d1 = d
         n=n*2
     return d1[0]
 
@@ -1112,7 +1120,7 @@ def csp_segment_convex_hull(sp1,sp2):
     if not (m1 and m2) and m3 : return [c,a,d]
     if not (m1 and m3) and m2 : return [b,c,d]
     
-    raise ValueError, "csp_segment_convex_hull happend something that shouldnot happen!"    
+    raise(ValueError, "csp_segment_convex_hull happend something that shouldnot happen!")    
 
     
 ################################################################################
@@ -1136,7 +1144,8 @@ def bounds_intersect(a, b) :
     return not ( (a[0]>b[2]) or (b[0]>a[2]) or (a[1]>b[3]) or (b[1]>a[3]) )
 
 
-def tpoint((x1,y1),(x2,y2),t):
+def tpoint(points,t):
+    (x1,y1),(x2,y2) = points
     return [x1+t*(x2-x1),y1+t*(y2-y1)]
 
 
@@ -1170,7 +1179,7 @@ def bez_normalized_slope(bez,t):
 ###    Some vector functions
 ################################################################################
     
-def normalize((x,y)) :
+def normalize(x,y) :
     l = math.sqrt(x**2+y**2)
     if l == 0 : return [0.,0.]
     else :         return [x/l, y/l]
@@ -1252,7 +1261,7 @@ def atan2(*arg):
         
         return (math.pi/2 - math.atan2(arg[0],arg[1]) ) % math.pi2
     else :
-        raise ValueError, "Bad argumets for atan! (%s)" % arg  
+        raise(ValueError, "Bad argumets for atan! (%s)" % arg  )
 
 
 def draw_text(text,x,y,style = None, font_size = 20) :
@@ -1374,6 +1383,7 @@ class P:
             return self.x * other.x + self.y * other.y
         return P(self.x * other, self.y * other)
     __rmul__ = __mul__
+    def __truediv__(self, other): return P(self.x / other, self.y / other)
     def __div__(self, other): return P(self.x / other, self.y / other)
     def mag(self): return math.hypot(self.x, self.y)
     def unit(self):
@@ -1563,15 +1573,15 @@ def csp_offset(csp, r) :
     ############################################################################
     # Remove all small segments (segment length < 0.001)
 
-    for i in xrange(len(csp)) :
-        for j in xrange(len(csp[i])) :
+    for i in range(len(csp)) :
+        for j in range(len(csp[i])) :
             sp = csp[i][j]
             if (P(sp[1])-P(sp[0])).mag() < 0.001 :
                 csp[i][j][0] = sp[1]
             if (P(sp[2])-P(sp[0])).mag() < 0.001 :
                 csp[i][j][2] = sp[1]
-    for i in xrange(len(csp)) :
-        for j in xrange(1,len(csp[i])) :
+    for i in range(len(csp)) :
+        for j in range(1,len(csp[i])) :
             if cspseglength(csp[i][j-1], csp[i][j])<0.001 : 
                 csp[i] = csp[i][:j] + csp[i][j+1:]
         if cspseglength(csp[i][-1],csp[i][0])>0.001 : 
@@ -1591,11 +1601,11 @@ def csp_offset(csp, r) :
     # Offset
     ############################################################################
     # Create offsets for all segments in the path. And join them together inside each subpath.         
-    unclipped_offset = [[] for i in xrange(csp_len)]
-    offsets_original = [[] for i in xrange(csp_len)]
-    join_points = [[] for i in xrange(csp_len)]
-    intersection = [[] for i in xrange(csp_len)]
-    for i in xrange(csp_len) :
+    unclipped_offset = [[] for i in range(csp_len)]
+    offsets_original = [[] for i in range(csp_len)]
+    join_points = [[] for i in range(csp_len)]
+    intersection = [[] for i in range(csp_len)]
+    for i in range(csp_len) :
         subpath = csp[i]
         subpath_offset = []
         last_offset_len = 0
@@ -1645,14 +1655,14 @@ def csp_offset(csp, r) :
     small_tolerance = 0.01
     summ = 0
     summ1 = 0      
-    for subpath_i in xrange(csp_len) :
-        for subpath_j in xrange(subpath_i,csp_len) :
+    for subpath_i in range(csp_len) :
+        for subpath_j in range(subpath_i,csp_len) :
             subpath = unclipped_offset[subpath_i]
             subpath1 = unclipped_offset[subpath_j]
-            for i in xrange(1,len(subpath)) :
+            for i in range(1,len(subpath)) :
                 # If subpath_i==subpath_j we are looking for self intersections, so 
-                # we'll need search intersections only for xrange(i,len(subpath1))
-                for j in ( xrange(i,len(subpath1)) if subpath_i==subpath_j else xrange(len(subpath1))) :
+                # we'll need search intersections only for range(i,len(subpath1))
+                for j in ( range(i,len(subpath1)) if subpath_i==subpath_j else range(len(subpath1))) :
                     if subpath_i==subpath_j and j==i :
                         # Find self intersections of a segment
                         sp1,sp2,sp3 = csp_split(subpath[i-1],subpath[i],.5)
@@ -1690,7 +1700,7 @@ def csp_offset(csp, r) :
     # Split unclipped offset by intersection points into splitted_offset
     ########################################################################
     splitted_offset = []
-    for i in xrange(csp_len) :
+    for i in range(csp_len) :
         subpath = unclipped_offset[i]
         if len(intersection[i]) > 0 :
             parts = csp_subpath_split_by_points(subpath, intersection[i])
@@ -1833,11 +1843,11 @@ def biarc(sp1, sp2, z1, z2, depth=0):
     elif     csmall and a!=0:    beta = -b/a 
     elif not asmall:     
         discr = b*b-4*a*c
-        if discr < 0:    raise ValueError, (a,b,c,discr)
+        if discr < 0:    raise(ValueError, (a,b,c,discr))
         disq = discr**.5
         beta1 = (-b - disq) / 2 / a
         beta2 = (-b + disq) / 2 / a
-        if beta1*beta2 > 0 :    raise ValueError, (a,b,c,disq,beta1,beta2)
+        if beta1*beta2 > 0 :    raise(ValueError, (a,b,c,disq,beta1,beta2))
         beta = max(beta1, beta2)
     elif    asmall and bsmall:    
         return biarc_split(sp1, sp2, z1, z2, depth)
@@ -1856,7 +1866,7 @@ def biarc(sp1, sp2, z1, z2, depth=0):
         alpha =  (p2a - p0a) % (2*math.pi)                    
         if (p0a<p2a and  (p1a<p0a or p2a<p1a))    or    (p2a<p1a<p0a) : 
             alpha = -2*math.pi+alpha 
-        if abs(R.x)>1000000 or abs(R.y)>1000000  or (R-P0).mag<.1 :
+        if abs(R.x)>1000000 or abs(R.y)>1000000  or (R-P0).mag()<.1 :
             return None, None
         else :    
             return  R, alpha
@@ -2201,7 +2211,7 @@ class Polygon:
         
         while len(edges)>0 :
             poly = []
-            if loops > len_edges  : raise ValueError, "Hull error"
+            if loops > len_edges  : raise(ValueError, "Hull error")
             loops+=1
             # Find left most vertex.
             start = (1e100,1)
@@ -2212,7 +2222,7 @@ class Polygon:
             loops1 = 0
             while (last[1]!=start[0] or first_run) :     
                 first_run = False
-                if loops1 > len_edges  : raise ValueError, "Hull error"
+                if loops1 > len_edges  : raise(ValueError, "Hull error")
                 loops1 += 1
                 next = get_closes_edge_by_angle(edges[last[1]],last)
                 #draw_pointer(next[0]+next[1],"Green","line", comment=i, width= 1)
@@ -2447,14 +2457,18 @@ class laser_gcode(inkex.Effect):
             
 
             ### Sort to reduce Rapid distance    
-            k = range(1,len(p))
+            k = list(range(1,len(p)))
             keys = [0]
             while len(k)>0:
                 end = p[keys[-1]][-1][1]
                 dist = None
                 for i in range(len(k)):
                     start = p[k[i]][0][1]
-                    dist = max(   ( -( ( end[0]-start[0])**2+(end[1]-start[1])**2 ) ,i)    ,   dist )
+                    if dist is None:
+                        dist =  ( -( ( end[0]-start[0])**2+(end[1]-start[1])**2 ) ,i)
+                    else:
+                        dist = max(   ( -( ( end[0]-start[0])**2+(end[1]-start[1])**2 ) ,i)    ,   dist )
+                    # dist = max(   ( -( ( end[0]-start[0])**2+(end[1]-start[1])**2 ) ,i)    ,   dist )
                 keys += [k[dist[1]]]
                 del k[dist[1]]
             for k in keys:
@@ -2783,9 +2797,9 @@ class laser_gcode(inkex.Effect):
 
     def transform_csp(self, csp_, layer, reverse = False):
         csp = [  [ [csp_[i][j][0][:],csp_[i][j][1][:],csp_[i][j][2][:]]  for j in range(len(csp_[i])) ]   for i in range(len(csp_)) ]
-        for i in xrange(len(csp)):
-            for j in xrange(len(csp[i])): 
-                for k in xrange(len(csp[i][j])): 
+        for i in range(len(csp)):
+            for j in range(len(csp[i])): 
+                for k in range(len(csp[i][j])): 
                     csp[i][j][k] = self.transform(csp[i][j][k],layer, reverse)
         return csp
     
@@ -2987,7 +3001,7 @@ class laser_gcode(inkex.Effect):
             i=0        
             out=[]
             for p in points:
-                for j in xrange(i,len(points)):
+                for j in range(i,len(points)):
                     if p==points[j]: points[j]=[None,None]    
                 if p!=[None,None]: out+=[p]
             i+=1
@@ -2996,7 +3010,7 @@ class laser_gcode(inkex.Effect):
     
         def get_way_len(points):
             l=0
-            for i in xrange(1,len(points)):
+            for i in range(1,len(points)):
                 l+=math.sqrt((points[i][0]-points[i-1][0])**2 + (points[i][1]-points[i-1][1])**2)
             return l
 
@@ -3022,7 +3036,7 @@ class laser_gcode(inkex.Effect):
             for w in ways:
                 tpoints=points[:]
                 cw=[]
-                for j in xrange(0,len(points)):
+                for j in range(0,len(points)):
                     p=get_boundaries(get_boundaries(tpoints)[w[0]])[w[1]]
                     tpoints.remove(p[0])
                     cw+=p
@@ -3043,8 +3057,8 @@ class laser_gcode(inkex.Effect):
 
         self.check_dir() 
         gcode = ""
-
-        biarc_group = inkex.etree.SubElement( self.selected_paths.keys()[0] if len(self.selected_paths.keys())>0 else self.layers[0], inkex.addNS('g','svg') )
+        vocab = list(self.selected_paths.keys())
+        biarc_group = inkex.etree.SubElement( vocab[0] if len(vocab)>0 else self.layers[0], inkex.addNS('g','svg') )
         print_(("self.layers=",self.layers))
         print_(("paths=",paths))
         for layer in self.layers :
