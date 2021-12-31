@@ -46,6 +46,7 @@ _ = gettext.gettext
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning) 
 
+
 ### Check if inkex has errormsg (0.46 version doesnot have one.) Could be removed later.
 if "errormsg" not in dir(inkex):
     inkex.errormsg = lambda msg: sys.stderr.write((unicode(msg) + "\n").encode("UTF-8"))
@@ -2463,17 +2464,11 @@ class laser_gcode(inkex.Effect):
                 dist = None
                 for i in range(len(k)):
                     start = p[k[i]][0][1]
-
-                    # warnings.warn("dist: {}".format(dist))
-
                     if dist is None:
                         dist =  ( -( ( end[0]-start[0])**2+(end[1]-start[1])**2 ) ,i)
                     else:
                         dist = max(   ( -( ( end[0]-start[0])**2+(end[1]-start[1])**2 ) ,i)    ,   dist )
-
-                    # if ( -( ( end[0]-start[0])**2+(end[1]-start[1])**2 ) ,i) > dist:
                     # dist = max(   ( -( ( end[0]-start[0])**2+(end[1]-start[1])**2 ) ,i)    ,   dist )
-                warnings.warn("dist: {}".format(k[dist[1]]))
                 keys += [k[dist[1]]]
                 del k[dist[1]]
             for k in keys:
