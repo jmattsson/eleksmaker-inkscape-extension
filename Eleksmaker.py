@@ -2456,14 +2456,24 @@ class laser_gcode(inkex.Effect):
             
 
             ### Sort to reduce Rapid distance    
-            k = range(1,len(p))
+            k = list(range(1,len(p)))
             keys = [0]
             while len(k)>0:
                 end = p[keys[-1]][-1][1]
                 dist = None
                 for i in range(len(k)):
                     start = p[k[i]][0][1]
-                    dist = max(   ( -( ( end[0]-start[0])**2+(end[1]-start[1])**2 ) ,i)    ,   dist )
+
+                    # warnings.warn("dist: {}".format(dist))
+
+                    if dist is None:
+                        dist =  ( -( ( end[0]-start[0])**2+(end[1]-start[1])**2 ) ,i)
+                    else:
+                        dist = max(   ( -( ( end[0]-start[0])**2+(end[1]-start[1])**2 ) ,i)    ,   dist )
+
+                    # if ( -( ( end[0]-start[0])**2+(end[1]-start[1])**2 ) ,i) > dist:
+                    # dist = max(   ( -( ( end[0]-start[0])**2+(end[1]-start[1])**2 ) ,i)    ,   dist )
+                warnings.warn("dist: {}".format(k[dist[1]]))
                 keys += [k[dist[1]]]
                 del k[dist[1]]
             for k in keys:
